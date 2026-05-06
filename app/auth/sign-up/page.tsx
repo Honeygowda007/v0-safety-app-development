@@ -52,33 +52,7 @@ export default function Page() {
             `${window.location.origin}/auth/callback`,
         },
       })
-      
-      if (error) {
-        // Handle rate limit error specifically
-        if (error.message.toLowerCase().includes('rate limit') || 
-            error.message.toLowerCase().includes('email rate limit')) {
-          // Try to sign in instead - the user might already exist and just need to login
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          })
-          if (!signInError) {
-            router.refresh()
-            router.push('/')
-            return
-          }
-          // If sign-in also fails, show helpful message
-          setError('Email rate limit exceeded. This usually means your account already exists. Please try signing in instead, or wait a few minutes before trying again.')
-          return
-        }
-        // Handle "User already registered" error
-        if (error.message.toLowerCase().includes('already registered') ||
-            error.message.toLowerCase().includes('already exists')) {
-          setError('This email is already registered. Please sign in instead.')
-          return
-        }
-        throw error
-      }
+      if (error) throw error
       
       // Check if email confirmation is required
       if (data?.user?.identities?.length === 0) {
@@ -86,14 +60,6 @@ export default function Page() {
         return
       }
       
-      // If session exists, user is auto-confirmed - redirect to dashboard
-      if (data?.session) {
-        router.refresh()
-        router.push('/')
-        return
-      }
-      
-      // Otherwise, email confirmation is required
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')

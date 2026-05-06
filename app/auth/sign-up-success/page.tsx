@@ -1,7 +1,3 @@
-'use client'
-
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -9,44 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Shield, Mail, CheckCircle } from 'lucide-react'
+import { Shield, Mail } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, Suspense } from 'react'
 
-function SignUpSuccessContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const emailParam = searchParams.get('email')
-  
-  const [email, setEmail] = useState(emailParam || '')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
-      router.refresh()
-      router.push('/')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+export default function Page() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-background">
       <div className="w-full max-w-sm">
@@ -65,92 +27,34 @@ function SignUpSuccessContent() {
           <Card className="border-border bg-card">
             <CardHeader className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-success" />
+                <Mail className="w-8 h-8 text-success" />
               </div>
               <CardTitle className="text-2xl text-foreground">
-                Account Created!
+                Check Your Email
               </CardTitle>
               <CardDescription>
-                You can now sign in to your account
+                We&apos;ve sent you a confirmation link
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="text-center space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Please check your email inbox and click the confirmation link to activate your SilentShield account.
+              </p>
               <div className="p-4 rounded-lg bg-muted border border-border">
-                <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
-                  <p className="text-xs text-muted-foreground">
-                    If email confirmation is enabled, please check your inbox and click the confirmation link. Otherwise, you can sign in directly below.
-                  </p>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Didn&apos;t receive the email? Check your spam folder or contact support.
+                </p>
               </div>
-
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-muted border-border"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-muted border-border"
-                  />
-                </div>
-
-                {error && (
-                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                    <p className="text-sm text-destructive">{error}</p>
-                  </div>
-                )}
-
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                      Signing in...
-                    </span>
-                  ) : (
-                    'Sign In'
-                  )}
-                </Button>
-              </form>
-
-              <div className="text-center">
-                <Link 
-                  href="/auth/login"
-                  className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-                >
-                  Back to Login Page
-                </Link>
-              </div>
+              <Link 
+                href="/auth/login"
+                className="block w-full py-2.5 px-4 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Back to Sign In
+              </Link>
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
-  )
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={
-      <div className="flex min-h-svh w-full items-center justify-center bg-background">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
-      <SignUpSuccessContent />
-    </Suspense>
   )
 }
