@@ -74,7 +74,7 @@ export default function Page() {
             </h1>
           </div>
 
-          <Card className="border-border bg-card">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-2xl text-foreground">Welcome Back</CardTitle>
               <CardDescription>
@@ -93,7 +93,6 @@ export default function Page() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="bg-muted border-border"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -104,7 +103,6 @@ export default function Page() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="bg-muted border-border"
                     />
                   </div>
                   {error && (

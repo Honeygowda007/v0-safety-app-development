@@ -199,25 +199,20 @@ export default function SilentShieldDashboard() {
     if (!isListening) return
 
     const interval = setInterval(() => {
-      const newIntensity = Math.min(1, Math.max(0, audioIntensity + (Math.random() - 0.5) * 0.2))
-      setAudioIntensity(newIntensity)
+      // Use functional update to avoid dependency on audioIntensity
+      setAudioIntensity(prev => Math.min(1, Math.max(0, prev + (Math.random() - 0.5) * 0.2)))
 
       if (Math.random() < 0.05) {
         const emotions = ["NORMAL", "STRESS", "FEAR", "NORMAL", "NORMAL"]
         const newEmotion = emotions[Math.floor(Math.random() * emotions.length)]
         setDetectedEmotion(newEmotion)
-        
-        if (newEmotion !== "NORMAL") {
-          addActivity("detection", `Detected ${newEmotion.toLowerCase()} pattern in audio`, 
-            newEmotion === "FEAR" ? "medium" : "low")
-        }
       }
     }, 500)
 
     return () => clearInterval(interval)
-  }, [isListening, audioIntensity, addActivity])
+  }, [isListening])
 
-  // Update risk based on audio and emotion
+  // Update risk based on detected emotion only (not audio intensity to avoid loops)
   useEffect(() => {
     let newScore = 15
     let newLevel: "low" | "medium" | "high" = "low"
@@ -232,8 +227,8 @@ export default function SilentShieldDashboard() {
       newScore = 35 + Math.random() * 15
       newLevel = "medium"
     } else {
-      newScore = 10 + audioIntensity * 25
-      newLevel = newScore > 40 ? "medium" : "low"
+      newScore = 15 + Math.random() * 10
+      newLevel = "low"
     }
 
     setRiskScore(newScore)
@@ -244,7 +239,7 @@ export default function SilentShieldDashboard() {
       setCountdown(30)
       addActivity("alert", "High risk detected! Confirming emergency...", "high")
     }
-  }, [detectedEmotion, audioIntensity, status, addActivity])
+  }, [detectedEmotion, status, addActivity])
 
   // Countdown timer for alert confirmation
   useEffect(() => {
