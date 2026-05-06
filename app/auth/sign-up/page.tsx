@@ -43,17 +43,32 @@ export default function Page() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up the user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-            `${window.location.origin}/auth/callback`,
-        },
       })
-      if (error) throw error
-      router.push('/auth/sign-up-success')
+      if (signUpError) throw signUpError
+
+      // If we got a session back, user is auto-confirmed - redirect to home
+      if (signUpData.session) {
+        router.push('/')
+        return
+      }
+
+      // If no session, try to sign in immediately (for when email confirmation is disabled)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (signInError) {
+        // If sign-in fails, user may need email confirmation
+        // But we'll still try to redirect - the middleware will handle auth state
+        console.log('[v0] Sign-in after signup failed, attempting redirect anyway')
+      }
+      
+      router.push('/')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
