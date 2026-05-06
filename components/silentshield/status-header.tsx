@@ -1,17 +1,27 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Shield, Battery, Wifi, MapPin, Bell, Settings } from "lucide-react"
+import { Shield, Battery, Wifi, MapPin, Bell, Settings, LogOut, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/hooks/use-auth"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface StatusHeaderProps {
   isOnline: boolean
   batteryLevel: number
   location?: string
   onSettingsClick: () => void
+  userName?: string
 }
 
-export function StatusHeader({ isOnline, batteryLevel, location, onSettingsClick }: StatusHeaderProps) {
+export function StatusHeader({ isOnline, batteryLevel, location, onSettingsClick, userName }: StatusHeaderProps) {
+  const { signOut } = useAuth()
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 py-3">
@@ -79,6 +89,34 @@ export function StatusHeader({ isOnline, batteryLevel, location, onSettingsClick
             <Button variant="ghost" size="icon" onClick={onSettingsClick}>
               <Settings className="w-5 h-5" />
             </Button>
+            
+            {/* User menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <User className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {userName && (
+                  <>
+                    <div className="px-2 py-1.5 text-sm font-medium text-foreground">
+                      {userName}
+                    </div>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onClick={onSettingsClick}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
