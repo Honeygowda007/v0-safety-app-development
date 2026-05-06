@@ -30,14 +30,30 @@ export default function Page() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) throw error
-      router.push('/')
+      if (data.user) {
+        router.push('/')
+        router.refresh()
+      }
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      if (error instanceof Error) {
+        // Handle specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please try again.')
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Please confirm your email before signing in. Check your inbox.')
+        } else if (error.message.includes('Failed to fetch')) {
+          setError('Network error. Please check your connection and try again.')
+        } else {
+          setError(error.message)
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
