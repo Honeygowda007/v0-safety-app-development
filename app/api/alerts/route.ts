@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+  }
+  
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
   const limit = parseInt(searchParams.get('limit') || '50')
@@ -35,6 +40,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient()
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+  }
   
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   

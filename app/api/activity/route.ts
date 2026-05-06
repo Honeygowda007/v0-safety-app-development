@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+  }
+  
   const { searchParams } = new URL(request.url)
   const limit = parseInt(searchParams.get('limit') || '20')
   const offset = parseInt(searchParams.get('offset') || '0')
@@ -36,6 +41,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient()
+  
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+  }
   
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   

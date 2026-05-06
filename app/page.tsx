@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { StatusHeader } from "@/components/silentshield/status-header"
 import { RiskMeter } from "@/components/silentshield/risk-meter"
 import { AudioWaveform } from "@/components/silentshield/audio-waveform"
@@ -168,8 +168,10 @@ export default function SilentShieldDashboard() {
     }
   }
 
-  // Add activity helper
-  const addActivity = useCallback(async (type: ActivityItem["type"], message: string, severity?: ActivityItem["severity"]) => {
+  // Add activity helper - using ref to avoid dependency issues
+  const addActivityRef = useRef<(type: ActivityItem["type"], message: string, severity?: ActivityItem["severity"]) => void>()
+  
+  addActivityRef.current = async (type: ActivityItem["type"], message: string, severity?: ActivityItem["severity"]) => {
     const newActivity: ActivityItem = {
       id: Date.now().toString(),
       type,
@@ -192,54 +194,66 @@ export default function SilentShieldDashboard() {
         // Silently fail for activity logging
       }
     }
-  }, [isAuthenticated, logActivity])
+  }
 
-  // Simulate real-time audio detection
+  const addActivity = useCallback((type: ActivityItem["type"], message: string, severity?: ActivityItem["severity"]) => {
+    addActivityRef.current?.(type, message, severity)
+  }, [])
+
+  // Simulate real-time audio detection and risk assessment in a single effect
   useEffect(() => {
     if (!isListening) return
 
+    const statusRef = { current: status }
+    statusRef.current = status
+
     const interval = setInterval(() => {
-      // Use functional update to avoid dependency on audioIntensity
+      // Update audio intensity
       setAudioIntensity(prev => Math.min(1, Math.max(0, prev + (Math.random() - 0.5) * 0.2)))
 
+      // Occasionally detect new emotions
       if (Math.random() < 0.05) {
         const emotions = ["NORMAL", "STRESS", "FEAR", "NORMAL", "NORMAL"]
         const newEmotion = emotions[Math.floor(Math.random() * emotions.length)]
-        setDetectedEmotion(newEmotion)
+        
+        setDetectedEmotion(prevEmotion => {
+          if (prevEmotion === newEmotion) return prevEmotion
+          
+          // Calculate risk based on new emotion
+          let newScore = 15
+          let newLevel: "low" | "medium" | "high" = "low"
+
+          if (newEmotion === "PANIC") {
+            newScore = 85 + Math.random() * 15
+            newLevel = "high"
+          } else if (newEmotion === "FEAR") {
+            newScore = 55 + Math.random() * 25
+            newLevel = "medium"
+          } else if (newEmotion === "STRESS") {
+            newScore = 35 + Math.random() * 15
+            newLevel = "medium"
+          } else {
+            newScore = 15 + Math.random() * 10
+            newLevel = "low"
+          }
+
+          setRiskScore(newScore)
+          setRiskLevel(newLevel)
+
+          // Trigger alert if high risk detected while monitoring
+          if (newLevel === "high" && statusRef.current === "monitoring") {
+            setStatus("alert")
+            setCountdown(30)
+            addActivityRef.current?.("alert", "High risk detected! Confirming emergency...", "high")
+          }
+
+          return newEmotion
+        })
       }
     }, 500)
 
     return () => clearInterval(interval)
-  }, [isListening])
-
-  // Update risk based on detected emotion only (not audio intensity to avoid loops)
-  useEffect(() => {
-    let newScore = 15
-    let newLevel: "low" | "medium" | "high" = "low"
-
-    if (detectedEmotion === "PANIC") {
-      newScore = 85 + Math.random() * 15
-      newLevel = "high"
-    } else if (detectedEmotion === "FEAR") {
-      newScore = 55 + Math.random() * 25
-      newLevel = "medium"
-    } else if (detectedEmotion === "STRESS") {
-      newScore = 35 + Math.random() * 15
-      newLevel = "medium"
-    } else {
-      newScore = 15 + Math.random() * 10
-      newLevel = "low"
-    }
-
-    setRiskScore(newScore)
-    setRiskLevel(newLevel)
-
-    if (newLevel === "high" && status === "monitoring") {
-      setStatus("alert")
-      setCountdown(30)
-      addActivity("alert", "High risk detected! Confirming emergency...", "high")
-    }
-  }, [detectedEmotion, status, addActivity])
+  }, [isListening, status])
 
   // Countdown timer for alert confirmation
   useEffect(() => {

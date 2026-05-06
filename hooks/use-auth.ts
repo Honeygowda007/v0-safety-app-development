@@ -9,12 +9,14 @@ export function useAuth() {
   const supabase = createClient()
 
   const { data, error, isLoading, mutate } = useSWR('auth-user', async () => {
+    if (!supabase) return null
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error) throw error
     return user
   })
 
   const signOut = async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
     mutate(null)
     router.push('/auth/login')
