@@ -1,5 +1,6 @@
 'use client'
 
+import { signOut as serverSignOut } from '@/app/auth/actions'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
@@ -15,7 +16,7 @@ export function useAuth() {
   })
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    await serverSignOut()
     mutate(null)
     router.push('/auth/login')
   }

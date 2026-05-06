@@ -1,6 +1,6 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { signIn } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -25,20 +25,15 @@ export default function Page() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
+    const result = await signIn(email, password)
+    
+    if (result.success) {
       router.push('/')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
-    } finally {
+    } else {
+      setError(result.error || 'Invalid email or password')
       setIsLoading(false)
     }
   }

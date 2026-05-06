@@ -1,6 +1,6 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { signUpWithAutoConfirm } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -26,7 +26,6 @@ export default function Page() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
@@ -42,36 +41,12 @@ export default function Page() {
       return
     }
 
-    try {
-      // Sign up the user
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-      if (signUpError) throw signUpError
-
-      // If we got a session back, user is auto-confirmed - redirect to home
-      if (signUpData.session) {
-        router.push('/')
-        return
-      }
-
-      // If no session, try to sign in immediately (for when email confirmation is disabled)
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      
-      if (signInError) {
-        // If sign-in fails, user may need email confirmation
-        // But we'll still try to redirect - the middleware will handle auth state
-        console.log('[v0] Sign-in after signup failed, attempting redirect anyway')
-      }
-      
+    const result = await signUpWithAutoConfirm(email, password)
+    
+    if (result.success) {
       router.push('/')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
-    } finally {
+    } else {
+      setError(result.error || 'Failed to create account')
       setIsLoading(false)
     }
   }
