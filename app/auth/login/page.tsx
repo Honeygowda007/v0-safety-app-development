@@ -1,6 +1,6 @@
 'use client'
 
-import { signIn } from '@/app/auth/actions'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -28,12 +28,23 @@ export default function Page() {
     setIsLoading(true)
     setError(null)
 
-    const result = await signIn(email, password)
-    
-    if (result.success) {
-      router.push('/')
-    } else {
-      setError(result.error || 'Invalid email or password')
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) {
+        setError(error.message)
+        setIsLoading(false)
+        return
+      }
+      
+      // Force a full page refresh to ensure cookies are properly read
+      window.location.href = '/'
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
       setIsLoading(false)
     }
   }

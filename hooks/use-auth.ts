@@ -1,12 +1,9 @@
 'use client'
 
-import { signOut as serverSignOut } from '@/app/auth/actions'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 
 export function useAuth() {
-  const router = useRouter()
   const supabase = createClient()
 
   const { data, error, isLoading, mutate } = useSWR('auth-user', async () => {
@@ -16,9 +13,10 @@ export function useAuth() {
   })
 
   const signOut = async () => {
-    await serverSignOut()
+    await supabase.auth.signOut()
     mutate(null)
-    router.push('/auth/login')
+    // Force full page reload to clear all cookies and state
+    window.location.href = '/auth/login'
   }
 
   return {

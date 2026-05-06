@@ -10,10 +10,11 @@ export type AuthResult = {
 }
 
 /**
- * Signs up a new user with auto-confirmation (no email verification required).
+ * Creates a new user with auto-confirmation (no email verification required).
  * Uses the admin client to create the user with email_confirm: true.
+ * Note: This only creates the user - the client should sign in separately.
  */
-export async function signUpWithAutoConfirm(
+export async function createUserWithAutoConfirm(
   email: string,
   password: string,
   fullName?: string
@@ -43,21 +44,9 @@ export async function signUpWithAutoConfirm(
       return { success: false, error: 'Failed to create user' }
     }
 
-    // Now sign in the user with the regular client to create a session
-    const supabase = await createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (signInError) {
-      return { success: false, error: signInError.message }
-    }
-
-    revalidatePath('/', 'layout')
     return { success: true }
   } catch (error) {
-    console.error('[v0] signUpWithAutoConfirm error:', error)
+    console.error('[v0] createUserWithAutoConfirm error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'An unexpected error occurred',
