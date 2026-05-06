@@ -26,7 +26,6 @@ export default function Page() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
@@ -43,7 +42,8 @@ export default function Page() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -53,6 +53,13 @@ export default function Page() {
         },
       })
       if (error) throw error
+      
+      // Check if email confirmation is required
+      if (data?.user?.identities?.length === 0) {
+        setError('This email is already registered. Please sign in instead.')
+        return
+      }
+      
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')

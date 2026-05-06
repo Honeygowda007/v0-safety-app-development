@@ -66,12 +66,11 @@ export interface UserSettings {
 export interface MonitoringSession {
   id: string
   user_id: string
+  status: 'active' | 'paused' | 'ended'
   started_at: string
   ended_at: string | null
-  total_duration_seconds: number | null
-  alerts_count: number
-  average_risk_level: number
-  status: 'active' | 'paused' | 'ended'
+  total_duration_seconds: number
+  created_at: string
 }
 
 export interface SafetyAnalyticsData {
