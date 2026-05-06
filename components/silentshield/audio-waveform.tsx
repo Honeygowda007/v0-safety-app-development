@@ -54,8 +54,8 @@ export function AudioWaveform({ isListening, intensity, detectedEmotion }: Audio
 
   return (
     <div className={cn(
-      "rounded-xl border border-border bg-card p-6",
-      isListening && intensity > 0.7 && "glow-red"
+      "rounded-xl border border-border bg-white/80 backdrop-blur-sm shadow-sm p-6",
+      isListening && intensity > 0.7 && "glow-destructive"
     )}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

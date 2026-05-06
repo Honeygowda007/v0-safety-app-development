@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   }
 
   let query = supabase
-    .from('emergency_alerts')
+    .from('alerts')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -44,27 +44,23 @@ export async function POST(request: Request) {
 
   const body = await request.json()
   const { 
-    trigger_type, 
-    risk_level, 
+    type = 'manual',
     latitude, 
     longitude, 
-    location_name,
-    audio_evidence_url,
-    notes 
+    address,
+    message
   } = body
 
+  const location = latitude && longitude ? { latitude, longitude, address } : null
+
   const { data: alert, error } = await supabase
-    .from('emergency_alerts')
+    .from('alerts')
     .insert({
       user_id: user.id,
+      type,
       status: 'active',
-      trigger_type: trigger_type || 'manual',
-      risk_level: risk_level || 75,
-      latitude,
-      longitude,
-      location_name,
-      audio_evidence_url,
-      notes
+      location,
+      message
     })
     .select()
     .single()
@@ -76,27 +72,24 @@ export async function POST(request: Request) {
   // Log the alert
   await supabase.from('activity_logs').insert({
     user_id: user.id,
-    event_type: 'alert_triggered',
-    severity: 'critical',
-    message: `Emergency alert triggered via ${trigger_type || 'manual'}`,
-    metadata: { alert_id: alert.id, risk_level, location_name }
+    action: 'alert_triggered',
+    description: `Emergency alert triggered: ${type}`,
+    metadata: { alert_id: alert.id, location }
   })
 
-  // Get trusted contacts to notify
+  // Get emergency contacts to notify
   const { data: contacts } = await supabase
-    .from('trusted_contacts')
+    .from('emergency_contacts')
     .select('*')
     .eq('user_id', user.id)
-    .eq('notify_on_alert', true)
 
   // Log contact notifications
   if (contacts && contacts.length > 0) {
     for (const contact of contacts) {
       await supabase.from('activity_logs').insert({
         user_id: user.id,
-        event_type: 'contact_notified',
-        severity: 'warning',
-        message: `Notifying ${contact.name}`,
+        action: 'contact_notified',
+        description: `Notifying ${contact.name}`,
         metadata: { contact_id: contact.id, contact_phone: contact.phone }
       })
     }

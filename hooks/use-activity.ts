@@ -13,9 +13,8 @@ export function useActivity(limit = 20) {
   )
 
   const logActivity = async (activity: {
-    event_type: string
-    severity?: string
-    message: string
+    action: string
+    description?: string
     metadata?: Record<string, unknown>
   }) => {
     const res = await fetch('/api/activity', {

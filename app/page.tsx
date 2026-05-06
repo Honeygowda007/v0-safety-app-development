@@ -16,9 +16,8 @@ import { useContacts } from "@/hooks/use-contacts"
 import { useAlerts } from "@/hooks/use-alerts"
 import { useSettings } from "@/hooks/use-settings"
 import { useActivity } from "@/hooks/use-activity"
-import { useMonitoring } from "@/hooks/use-monitoring"
-import { useAnalytics } from "@/hooks/use-analytics"
 import Link from "next/link"
+import { Shield } from "lucide-react"
 
 // Types
 interface Contact {
@@ -43,8 +42,6 @@ export default function SilentShieldDashboard() {
   const { activeAlert, triggerAlert, resolveAlert } = useAlerts()
   const { settings: dbSettings, updateSettings } = useSettings()
   const { activities: dbActivities, logActivity } = useActivity()
-  const { isMonitoring, startMonitoring, stopMonitoring } = useMonitoring()
-  const { analytics } = useAnalytics()
 
   // State
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -63,7 +60,7 @@ export default function SilentShieldDashboard() {
     autoAlarm: true,
     vibrationFeedback: true,
     offlineMode: false,
-    darkMode: true,
+    darkMode: false,
     silentMode: false,
     multiLanguage: true,
   })
@@ -92,16 +89,16 @@ export default function SilentShieldDashboard() {
   useEffect(() => {
     if (dbSettings) {
       setLocalSettings({
-        audioDetection: dbSettings.voice_detection_enabled,
-        locationTracking: dbSettings.location_sharing_enabled,
-        autoAlarm: dbSettings.auto_recording_enabled,
+        audioDetection: dbSettings.sos_enabled,
+        locationTracking: dbSettings.location_sharing,
+        autoAlarm: dbSettings.auto_call_enabled,
         vibrationFeedback: true,
-        offlineMode: dbSettings.offline_mode_enabled,
-        darkMode: true,
+        offlineMode: false,
+        darkMode: dbSettings.theme === 'dark',
         silentMode: false,
         multiLanguage: true,
       })
-      setIsListening(dbSettings.voice_detection_enabled)
+      setIsListening(dbSettings.sos_enabled)
     }
   }, [dbSettings])
 
@@ -110,10 +107,10 @@ export default function SilentShieldDashboard() {
     if (dbActivities.length > 0) {
       setLocalActivities(dbActivities.map(a => ({
         id: a.id,
-        type: mapEventTypeToActivityType(a.event_type),
-        message: a.message,
+        type: mapActionToActivityType(a.action),
+        message: a.description || a.action,
         timestamp: new Date(a.created_at),
-        severity: a.severity === 'critical' ? 'high' : a.severity === 'warning' ? 'medium' : 'low'
+        severity: 'low'
       })))
     }
   }, [dbActivities])
@@ -122,7 +119,6 @@ export default function SilentShieldDashboard() {
   useEffect(() => {
     if (activeAlert) {
       setStatus("emergency")
-      setRiskScore(activeAlert.risk_level)
     }
   }, [activeAlert])
 
@@ -144,25 +140,17 @@ export default function SilentShieldDashboard() {
     }
   }, [localSettings.locationTracking])
 
-  // Start monitoring on mount if authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isMonitoring) {
-      startMonitoring().catch(console.error)
-    }
-  }, [isAuthenticated, isMonitoring, startMonitoring])
-
-  // Helper to map event types
-  function mapEventTypeToActivityType(eventType: string): ActivityItem["type"] {
-    switch (eventType) {
+  // Helper to map action types
+  function mapActionToActivityType(action: string): ActivityItem["type"] {
+    switch (action) {
       case 'alert_triggered':
       case 'alert_resolved':
         return 'alert'
       case 'location_update':
         return 'location'
-      case 'monitoring_start':
-      case 'monitoring_stop':
-      case 'risk_elevated':
-        return 'detection'
+      case 'contact_added':
+      case 'contact_removed':
+        return 'system'
       default:
         return 'system'
     }
@@ -183,9 +171,8 @@ export default function SilentShieldDashboard() {
     if (isAuthenticated) {
       try {
         await logActivity({
-          event_type: type === 'alert' ? 'alert_triggered' : type === 'location' ? 'location_update' : 'system',
-          severity: severity === 'high' ? 'critical' : severity === 'medium' ? 'warning' : 'info',
-          message,
+          action: type === 'alert' ? 'alert_triggered' : type === 'location' ? 'location_update' : 'system',
+          description: message,
           metadata: {}
         })
       } catch {
@@ -268,11 +255,10 @@ export default function SilentShieldDashboard() {
     if (isAuthenticated) {
       try {
         await triggerAlert({
-          trigger_type: detectedEmotion === "PANIC" ? "voice_detected" : "manual",
-          risk_level: Math.round(riskScore),
+          type: detectedEmotion === "PANIC" ? "sos" : "manual",
           latitude: location.latitude,
           longitude: location.longitude,
-          location_name: location.address
+          address: location.address
         })
       } catch (error) {
         console.error("Failed to trigger alert:", error)
@@ -310,9 +296,7 @@ export default function SilentShieldDashboard() {
           name: contact.name,
           phone: contact.phone,
           relationship: contact.relationship,
-          is_primary: localContacts.length === 0,
-          notify_on_alert: true,
-          auto_call: false
+          is_primary: localContacts.length === 0
         })
       } catch (error) {
         console.error("Failed to add contact:", error)
@@ -350,16 +334,12 @@ export default function SilentShieldDashboard() {
     if (key === "audioDetection") {
       setIsListening(value)
       if (isAuthenticated) {
-        await updateSettings({ voice_detection_enabled: value })
+        await updateSettings({ sos_enabled: value })
       }
     }
     
     if (key === "locationTracking" && isAuthenticated) {
-      await updateSettings({ location_sharing_enabled: value })
-    }
-    
-    if (key === "offlineMode" && isAuthenticated) {
-      await updateSettings({ offline_mode_enabled: value })
+      await updateSettings({ location_sharing: value })
     }
   }
 
@@ -368,7 +348,7 @@ export default function SilentShieldDashboard() {
     switch (action) {
       case "shake":
         addActivity("system", "Shake detection enabled")
-        if (isAuthenticated) await updateSettings({ shake_sos_enabled: true })
+        if (isAuthenticated) await updateSettings({ shake_to_alert: true })
         break
       case "siren":
         addActivity("alert", "Siren activated!", "medium")
@@ -378,14 +358,12 @@ export default function SilentShieldDashboard() {
         break
       case "sms":
         addActivity("system", "Emergency SMS sent to all contacts")
-        if (isAuthenticated) await updateSettings({ sms_alerts_enabled: true })
         break
       case "call112":
         addActivity("alert", "Initiating call to 112", "high")
         break
       case "record":
         addActivity("system", "Audio recording started")
-        if (isAuthenticated) await updateSettings({ auto_recording_enabled: true })
         break
       case "photo":
         addActivity("system", "Evidence photo captured")
@@ -413,13 +391,11 @@ export default function SilentShieldDashboard() {
   // Show login prompt if not authenticated
   if (!authLoading && !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="space-y-4">
-            <div className="w-20 h-20 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
-              <svg className="w-10 h-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-teal-100 to-blue-100 flex items-center justify-center shadow-lg">
+              <Shield className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">SilentShield AI</h1>
             <p className="text-muted-foreground">
@@ -430,13 +406,13 @@ export default function SilentShieldDashboard() {
           <div className="space-y-4 pt-6">
             <Link 
               href="/auth/login"
-              className="block w-full py-3 px-4 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              className="block w-full py-3 px-4 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all shadow-md hover:shadow-lg"
             >
               Sign In
             </Link>
             <Link 
               href="/auth/sign-up"
-              className="block w-full py-3 px-4 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
+              className="block w-full py-3 px-4 rounded-xl border border-border bg-white text-foreground font-medium hover:bg-muted transition-all shadow-sm hover:shadow-md"
             >
               Create Account
             </Link>
@@ -453,7 +429,7 @@ export default function SilentShieldDashboard() {
   // Show loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-muted-foreground">Loading SilentShield...</p>
@@ -463,7 +439,7 @@ export default function SilentShieldDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50/50 via-white to-blue-50/50">
       <StatusHeader
         isOnline={true}
         batteryLevel={78}
@@ -474,18 +450,18 @@ export default function SilentShieldDashboard() {
 
       <main className="container mx-auto px-4 py-6">
         {/* Demo controls */}
-        <div className="mb-6 p-4 rounded-xl border border-border bg-card">
-          <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Demo Controls</p>
+        <div className="mb-6 p-4 rounded-xl border border-border bg-white/80 backdrop-blur-sm shadow-sm">
+          <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-medium">Demo Controls</p>
           <div className="flex flex-wrap gap-2">
             <button 
               onClick={() => simulateScenario("panic")}
-              className="px-3 py-1.5 text-xs rounded-lg bg-destructive/20 text-destructive border border-destructive/30 hover:bg-destructive/30 transition-colors"
+              className="px-4 py-2 text-sm rounded-lg bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-all font-medium"
             >
               Simulate Panic Detection
             </button>
             <button 
               onClick={() => simulateScenario("normal")}
-              className="px-3 py-1.5 text-xs rounded-lg bg-success/20 text-success border border-success/30 hover:bg-success/30 transition-colors"
+              className="px-4 py-2 text-sm rounded-lg bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-all font-medium"
             >
               Reset to Normal
             </button>
@@ -538,7 +514,7 @@ export default function SilentShieldDashboard() {
         {/* Analytics and Activity log */}
         <div className="mt-6 grid lg:grid-cols-2 gap-6">
           <SafetyAnalytics
-            data={analytics || {
+            data={{
               totalMonitoringHours: 0,
               alertsThisWeek: 0,
               safetyScore: 100,

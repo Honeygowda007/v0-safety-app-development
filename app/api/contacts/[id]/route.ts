@@ -15,27 +15,24 @@ export async function PUT(
   }
 
   const body = await request.json()
-  const { name, phone, email, relationship, is_primary, notify_on_alert, auto_call } = body
+  const { name, phone, relationship, is_primary } = body
 
   // If this contact is primary, unset other primary contacts
   if (is_primary) {
     await supabase
-      .from('trusted_contacts')
+      .from('emergency_contacts')
       .update({ is_primary: false })
       .eq('user_id', user.id)
       .neq('id', id)
   }
 
   const { data: contact, error } = await supabase
-    .from('trusted_contacts')
+    .from('emergency_contacts')
     .update({
       name,
       phone,
-      email,
       relationship,
       is_primary,
-      notify_on_alert,
-      auto_call,
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
@@ -64,7 +61,7 @@ export async function DELETE(
   }
 
   const { error } = await supabase
-    .from('trusted_contacts')
+    .from('emergency_contacts')
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)
@@ -76,9 +73,8 @@ export async function DELETE(
   // Log activity
   await supabase.from('activity_logs').insert({
     user_id: user.id,
-    event_type: 'system',
-    severity: 'info',
-    message: 'Removed a trusted contact',
+    action: 'contact_removed',
+    description: 'Removed an emergency contact',
     metadata: { contact_id: id }
   })
 

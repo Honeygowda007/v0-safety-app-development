@@ -34,7 +34,7 @@ export function TrustedContacts({ contacts, onAddContact, onRemoveContact, emerg
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
+    <div className="rounded-xl border border-border bg-white/80 backdrop-blur-sm shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
           Trusted Contacts

@@ -11,7 +11,7 @@ export async function GET() {
   }
 
   const { data: contacts, error } = await supabase
-    .from('trusted_contacts')
+    .from('emergency_contacts')
     .select('*')
     .eq('user_id', user.id)
     .order('is_primary', { ascending: false })
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { name, phone, email, relationship, is_primary, notify_on_alert, auto_call } = body
+  const { name, phone, relationship, is_primary } = body
 
   if (!name || !phone) {
     return NextResponse.json({ error: 'Name and phone are required' }, { status: 400 })
@@ -43,22 +43,19 @@ export async function POST(request: Request) {
   // If this contact is primary, unset other primary contacts
   if (is_primary) {
     await supabase
-      .from('trusted_contacts')
+      .from('emergency_contacts')
       .update({ is_primary: false })
       .eq('user_id', user.id)
   }
 
   const { data: contact, error } = await supabase
-    .from('trusted_contacts')
+    .from('emergency_contacts')
     .insert({
       user_id: user.id,
       name,
       phone,
-      email: email || null,
       relationship: relationship || null,
-      is_primary: is_primary || false,
-      notify_on_alert: notify_on_alert ?? true,
-      auto_call: auto_call || false
+      is_primary: is_primary || false
     })
     .select()
     .single()
@@ -70,9 +67,8 @@ export async function POST(request: Request) {
   // Log activity
   await supabase.from('activity_logs').insert({
     user_id: user.id,
-    event_type: 'system',
-    severity: 'info',
-    message: `Added trusted contact: ${name}`,
+    action: 'contact_added',
+    description: `Added emergency contact: ${name}`,
     metadata: { contact_id: contact.id }
   })
 

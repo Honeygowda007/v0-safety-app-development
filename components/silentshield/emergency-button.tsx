@@ -71,7 +71,7 @@ export function EmergencyButton({ status, onStatusChange, countdown }: Emergency
   const Icon = config.icon
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
+    <div className="rounded-xl border border-border bg-white/80 backdrop-blur-sm shadow-sm p-6">
       <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
         Safety Status
       </h3>

@@ -14,7 +14,7 @@ interface LocationMapProps {
 
 export function LocationMap({ latitude, longitude, address, isTracking, lastUpdated }: LocationMapProps) {
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-xl border border-border bg-white/80 backdrop-blur-sm shadow-sm overflow-hidden">
       {/* Map visualization */}
       <div className="relative h-48 bg-muted/30">
         {/* Grid overlay */}

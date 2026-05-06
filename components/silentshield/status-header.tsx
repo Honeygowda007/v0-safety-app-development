@@ -23,7 +23,7 @@ interface StatusHeaderProps {
 export function StatusHeader({ isOnline, batteryLevel, location, onSettingsClick, userName }: StatusHeaderProps) {
   const { signOut } = useAuth()
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-xl shadow-sm">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}

@@ -50,16 +50,14 @@ export async function PUT(request: Request) {
   
   // Filter allowed fields
   const allowedFields = [
-    'voice_detection_enabled',
-    'keyword_detection_enabled',
-    'auto_recording_enabled',
-    'shake_sos_enabled',
-    'sms_alerts_enabled',
-    'call_alerts_enabled',
-    'location_sharing_enabled',
-    'offline_mode_enabled',
-    'detection_sensitivity',
-    'keywords'
+    'sos_enabled',
+    'shake_to_alert',
+    'auto_call_enabled',
+    'location_sharing',
+    'check_in_interval',
+    'safe_words',
+    'theme',
+    'notifications_enabled'
   ]
 
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
@@ -84,9 +82,8 @@ export async function PUT(request: Request) {
   // Log settings change
   await supabase.from('activity_logs').insert({
     user_id: user.id,
-    event_type: 'settings_changed',
-    severity: 'info',
-    message: 'Updated safety settings',
+    action: 'settings_updated',
+    description: 'Updated safety settings',
     metadata: { changed_fields: Object.keys(updateData).filter(k => k !== 'updated_at') }
   })
 

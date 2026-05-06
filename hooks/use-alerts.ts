@@ -15,12 +15,11 @@ export function useAlerts(status?: string) {
   )
 
   const triggerAlert = async (alertData: {
-    trigger_type?: string
-    risk_level?: number
+    type?: string
     latitude?: number
     longitude?: number
-    location_name?: string
-    notes?: string
+    address?: string
+    message?: string
   }) => {
     const res = await fetch('/api/alerts', {
       method: 'POST',
@@ -33,11 +32,11 @@ export function useAlerts(status?: string) {
     return result
   }
 
-  const resolveAlert = async (id: string, status: 'resolved' | 'cancelled' | 'false_alarm', notes?: string) => {
+  const resolveAlert = async (id: string, status: 'resolved' | 'cancelled', message?: string) => {
     const res = await fetch(`/api/alerts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, notes })
+      body: JSON.stringify({ status, message })
     })
     const result = await res.json()
     if (!res.ok) throw new Error(result.error)

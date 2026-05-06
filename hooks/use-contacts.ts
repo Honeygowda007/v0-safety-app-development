@@ -11,7 +11,7 @@ export function useContacts() {
     fetcher
   )
 
-  const addContact = async (contact: Omit<TrustedContact, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addContact = async (contact: { name: string; phone: string; relationship?: string; is_primary?: boolean }) => {
     const res = await fetch('/api/contacts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

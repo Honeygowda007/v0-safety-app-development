@@ -15,23 +15,23 @@ export async function PUT(
   }
 
   const body = await request.json()
-  const { status, notes } = body
+  const { status, message } = body
 
   const updateData: Record<string, unknown> = {}
   
   if (status) {
     updateData.status = status
-    if (status === 'resolved' || status === 'cancelled' || status === 'false_alarm') {
+    if (status === 'resolved' || status === 'cancelled') {
       updateData.resolved_at = new Date().toISOString()
     }
   }
   
-  if (notes !== undefined) {
-    updateData.notes = notes
+  if (message !== undefined) {
+    updateData.message = message
   }
 
   const { data: alert, error } = await supabase
-    .from('emergency_alerts')
+    .from('alerts')
     .update(updateData)
     .eq('id', id)
     .eq('user_id', user.id)
@@ -46,9 +46,8 @@ export async function PUT(
   if (status && status !== 'active') {
     await supabase.from('activity_logs').insert({
       user_id: user.id,
-      event_type: 'alert_resolved',
-      severity: 'info',
-      message: `Alert ${status}: ${notes || 'No notes provided'}`,
+      action: 'alert_resolved',
+      description: `Alert ${status}: ${message || 'No message provided'}`,
       metadata: { alert_id: id, resolution: status }
     })
   }
@@ -70,7 +69,7 @@ export async function GET(
   }
 
   const { data: alert, error } = await supabase
-    .from('emergency_alerts')
+    .from('alerts')
     .select('*')
     .eq('id', id)
     .eq('user_id', user.id)

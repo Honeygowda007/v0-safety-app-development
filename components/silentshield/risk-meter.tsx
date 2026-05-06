@@ -53,7 +53,7 @@ export function RiskMeter({ riskLevel, riskScore }: RiskMeterProps) {
 
   return (
     <div className={cn(
-      "relative rounded-xl border border-border bg-card p-6",
+      "relative rounded-xl border border-border bg-white/80 backdrop-blur-sm shadow-sm p-6",
       getRiskGlow()
     )}>
       {/* Background gradient */}
