@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import useSWR from 'swr'
 import type { EmergencyAlert } from '@/lib/types/database'
 
@@ -14,7 +15,7 @@ export function useAlerts(status?: string) {
     { refreshInterval: 5000 } // Poll every 5 seconds for active alerts
   )
 
-  const triggerAlert = async (alertData: {
+  const triggerAlert = useCallback(async (alertData: {
     trigger_type?: string
     risk_level?: number
     latitude?: number
@@ -31,9 +32,9 @@ export function useAlerts(status?: string) {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result
-  }
+  }, [mutate])
 
-  const resolveAlert = async (id: string, status: 'resolved' | 'cancelled' | 'false_alarm', notes?: string) => {
+  const resolveAlert = useCallback(async (id: string, status: 'resolved' | 'cancelled' | 'false_alarm', notes?: string) => {
     const res = await fetch(`/api/alerts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -43,7 +44,7 @@ export function useAlerts(status?: string) {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result.alert
-  }
+  }, [mutate])
 
   const activeAlert = data?.alerts?.find(a => a.status === 'active')
 

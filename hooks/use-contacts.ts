@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import useSWR from 'swr'
 import type { TrustedContact } from '@/lib/types/database'
 
@@ -11,7 +12,7 @@ export function useContacts() {
     fetcher
   )
 
-  const addContact = async (contact: Omit<TrustedContact, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addContact = useCallback(async (contact: Omit<TrustedContact, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     const res = await fetch('/api/contacts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -21,9 +22,9 @@ export function useContacts() {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result.contact
-  }
+  }, [mutate])
 
-  const updateContact = async (id: string, updates: Partial<TrustedContact>) => {
+  const updateContact = useCallback(async (id: string, updates: Partial<TrustedContact>) => {
     const res = await fetch(`/api/contacts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -33,9 +34,9 @@ export function useContacts() {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result.contact
-  }
+  }, [mutate])
 
-  const deleteContact = async (id: string) => {
+  const deleteContact = useCallback(async (id: string) => {
     const res = await fetch(`/api/contacts/${id}`, {
       method: 'DELETE'
     })
@@ -44,7 +45,7 @@ export function useContacts() {
       throw new Error(result.error)
     }
     mutate()
-  }
+  }, [mutate])
 
   return {
     contacts: data?.contacts || [],

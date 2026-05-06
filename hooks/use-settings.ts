@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import useSWR from 'swr'
 import type { UserSettings } from '@/lib/types/database'
 
@@ -11,7 +12,7 @@ export function useSettings() {
     fetcher
   )
 
-  const updateSettings = async (updates: Partial<UserSettings>) => {
+  const updateSettings = useCallback(async (updates: Partial<UserSettings>) => {
     const res = await fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -21,7 +22,7 @@ export function useSettings() {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result.settings
-  }
+  }, [mutate])
 
   return {
     settings: data?.settings,

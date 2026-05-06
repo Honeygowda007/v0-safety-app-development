@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import useSWR from 'swr'
 import type { ActivityLog } from '@/lib/types/database'
 
@@ -12,7 +13,7 @@ export function useActivity(limit = 20) {
     { refreshInterval: 10000 } // Poll every 10 seconds
   )
 
-  const logActivity = async (activity: {
+  const logActivity = useCallback(async (activity: {
     event_type: string
     severity?: string
     message: string
@@ -27,7 +28,7 @@ export function useActivity(limit = 20) {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result.activity
-  }
+  }, [mutate])
 
   return {
     activities: data?.activities || [],

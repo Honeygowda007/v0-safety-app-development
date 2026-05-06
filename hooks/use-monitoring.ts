@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import useSWR from 'swr'
 import type { MonitoringSession } from '@/lib/types/database'
 
@@ -12,7 +13,7 @@ export function useMonitoring() {
     { refreshInterval: 30000 } // Poll every 30 seconds
   )
 
-  const startMonitoring = async () => {
+  const startMonitoring = useCallback(async () => {
     const res = await fetch('/api/monitoring', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -22,9 +23,9 @@ export function useMonitoring() {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result.session
-  }
+  }, [mutate])
 
-  const stopMonitoring = async () => {
+  const stopMonitoring = useCallback(async () => {
     const res = await fetch('/api/monitoring', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,7 +35,7 @@ export function useMonitoring() {
     if (!res.ok) throw new Error(result.error)
     mutate()
     return result.session
-  }
+  }, [mutate])
 
   return {
     session: data?.session,
